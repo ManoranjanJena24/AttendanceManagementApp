@@ -29,6 +29,7 @@ function searchAttendance() {
 function fetchAttendanceReport() {
   axios.get(`${url}/attendance/report`)
     .then(response => {
+
       displayAttendanceReport(response.data);
     })
     .catch(error => {
@@ -41,39 +42,38 @@ function fetchAttendanceReport() {
 function displayAttendance(students, attendance) {
   const mainContent = document.getElementById('mainContent');
   mainContent.innerHTML = '';
+  console.log(attendance)
+  console.log(students)
 
   students.forEach(student => {
     const studentContainer = document.createElement('div');
     studentContainer.classList.add('student-container');
-
     const studentName = document.createElement('p');
     studentName.textContent = student.name;
     studentContainer.appendChild(studentName);
 
-    const studentAttendance = attendance.find(record => record.studentId === student.id);
+    const studentAttendance = attendance.find(record => record.StudentId === student.id);
 
     let attendanceStatusText = 'Attendance: ';
+    
     if (studentAttendance) {
       attendanceStatusText += studentAttendance.present ? 'Present' : 'Absent';
     } else {
-      attendanceStatusText += 'Absent';
+      // attendanceStatusText += 'Absent';
+      const presentRadio = createRadioButton(student.id, 'present');
+      const absentRadio = createRadioButton(student.id, 'absent');
+
+      const radioContainer = document.createElement('div');
+      radioContainer.appendChild(presentRadio);
+      radioContainer.appendChild(createLabel('Present', presentRadio));
+      radioContainer.appendChild(absentRadio);
+      radioContainer.appendChild(createLabel('Absent', absentRadio));
+
+      studentContainer.appendChild(radioContainer);
     }
     const attendanceStatus = document.createElement('p');
     attendanceStatus.textContent = attendanceStatusText;
     studentContainer.appendChild(attendanceStatus);
-
-    // Create radio buttons for marking attendance
-    const presentRadio = createRadioButton(student.id, 'present');
-    const absentRadio = createRadioButton(student.id, 'absent');
-
-    const radioContainer = document.createElement('div');
-    radioContainer.appendChild(presentRadio);
-    radioContainer.appendChild(createLabel('Present', presentRadio));
-    radioContainer.appendChild(absentRadio);
-    radioContainer.appendChild(createLabel('Absent', absentRadio));
-
-    studentContainer.appendChild(radioContainer);
-
     mainContent.appendChild(studentContainer);
   });
 
@@ -98,37 +98,6 @@ function createLabel(text, associatedInput) {
   return label;
 }
 
-
-
-// function markAttendance() {
-//   const date = document.getElementById('dateSelector').value;
-//   const attendanceData = [];
-
-//   // Get studentId from the radio button name attribute
-//   const radios = document.querySelectorAll('input[type="radio"]');
-//   radios.forEach(radio => {
-//     console.log(radio)
-//     attendanceData.push({
-//       studentId: radio.name, // Include studentId
-//       present: radio.checked
-//     });
-//   });
-
-//   axios.post(`${url}/attendance`, {
-//     date: date,
-//     attendance: attendanceData
-//   })
-//     .then(() => {
-//       console.log('Attendance marked successfully');
-//       // Clear radio button selections
-//       radios.forEach(radio => {
-//         radio.checked = false;
-//       });
-//     })
-//     .catch(error => {
-//       console.error('Error marking attendance:', error);
-//     });
-// }
 
 function markAttendance() {
   console.log("inside mark")
@@ -174,10 +143,12 @@ function displayAttendanceReport(reportData) {
   const mainContent = document.getElementById('mainContent');
   mainContent.innerHTML = '';
 
-  reportData.forEach(student => {
+  reportData.data.forEach(student => {
+    let percentage = (student.DaysPresent / student.AttendanceCount) * 100;
+    percentage=parseFloat(percentage.toFixed(2));
     const div = document.createElement('div');
     div.innerHTML = `
-        <p>${student.name}: ${student.daysPresent} days</p>
+        <p>${student.StudentId}:${student.StudentName}: ${student.DaysPresent}/${student.AttendanceCount}- ${percentage}% </p>
       `;
     mainContent.appendChild(div);
   });

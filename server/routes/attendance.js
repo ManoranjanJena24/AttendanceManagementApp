@@ -18,7 +18,17 @@ router.get('/', async (req, res) => {
 router.post('/', async (req, res) => {
     try {
         const { date, attendance } = req.body;
-        await Attendance.bulkCreate(attendance.map(record => ({ date, ...record })));
+        for (const record of attendance) {
+            // Check if attendance record already exists for the student on the specified date
+            const existingRecord = await Attendance.findOne({ where: { StudentId: record.StudentId, date: date } });
+            if (existingRecord) {
+                // Update existing record
+                await existingRecord.update({ present: record.present });
+            } else {
+                // Create new record
+                await Attendance.create({ StudentId: record.StudentId, date: date, present: record.present });
+            }
+        }
         res.status(201).json({ message: 'Attendance marked successfully' });
     } catch (err) {
         console.error(err);
@@ -29,8 +39,8 @@ router.post('/', async (req, res) => {
 router.get('/report', async (req, res) => {
     try {
         const reportData = await Attendance.findAll({
-            attributes: ['studentId', [sequelize.fn('COUNT', sequelize.col('studentId')), 'daysPresent']],
-            group: ['studentId']
+            attributes: ['StudentId', [sequelize.fn('COUNT', sequelize.col('StudentId')), 'daysPresent']],
+            group: ['StudentId']
         });
         res.json(reportData);
     } catch (err) {
